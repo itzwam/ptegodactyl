@@ -3,6 +3,9 @@ package ptegodactyl
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"io/ioutil"
+	// "github.com/k0kubun/pp"
 	"io"
 	"log"
 	"net/http"
@@ -15,6 +18,20 @@ type AppClient struct {
 	BaseURL    *url.URL
 	UserAgent  string
 	httpClient *http.Client
+}
+
+// ErrorPayload is an error object
+type ErrorPayload struct {
+	Code   string `json:"code"`
+	Detail string `json:"detail"`
+	Source struct {
+		Field string `json:"field"`
+	} `json:"source"`
+}
+
+// ErrorAnswer is an error answer
+type ErrorAnswer struct {
+	Errors []ErrorPayload `json:"errors"`
 }
 
 // NewApp returns a ready to use appClient
@@ -64,7 +81,19 @@ func (c *AppClient) do(req *http.Request, v interface{}) (*http.Response, error)
 		return nil, err
 	}
 	defer resp.Body.Close()
-	err = json.NewDecoder(resp.Body).Decode(&v)
+
+	bytes, _ := ioutil.ReadAll(resp.Body)
+	errAnswer := ErrorAnswer{}
+	err = json.Unmarshal(bytes, &v)
+	if err != nil {
+		return resp, nil
+	}
+	err = json.Unmarshal(bytes, &errAnswer)
+	for _, errorPayload := range errAnswer.Errors {
+		if errorPayload.Code != "" {
+			return resp, errors.New("ERROR:" + errorPayload.Detail)
+		}
+	}
 	return resp, err
 }
 
@@ -98,9 +127,37 @@ func (c *AppClient) get(path string, v interface{}) error {
 	return nil
 }
 
-// Send sends infos to API
-func (c *AppClient) send(path string, body interface{}) error {
+// Post infos to API
+func (c *AppClient) post(path string, body interface{}, v interface{}) error {
 	req, err := c.newRequest("POST", path, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.do(req, &v)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Patch infos to API
+func (c *AppClient) patch(path string, body interface{}, v interface{}) error {
+	req, err := c.newRequest("PATCH", path, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.do(req, &v)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete infos to API
+func (c *AppClient) delete(path string, body interface{}) error {
+	req, err := c.newRequest("DELETE", path, body)
 	if err != nil {
 		return err
 	}

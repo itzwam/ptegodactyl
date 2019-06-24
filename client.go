@@ -115,12 +115,13 @@ func (c *Client) get(path string, v interface{}) error {
 }
 
 // Send sends infos to API
-func (c *Client) send(path string, body interface{}) error {
+func (c *Client) send(path string, body interface{}, v interface{}) error {
 	req, err := c.newRequest("POST", path, body)
 	if err != nil {
 		return err
 	}
-	_, err = c.do(req, nil)
+
+	_, err = c.do(req, &v)
 	if err != nil {
 		return err
 	}

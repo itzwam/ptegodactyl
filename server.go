@@ -160,7 +160,7 @@ type ConsolePayload struct {
 // SendConsoleCommand sends a command to the server
 func (s *Server) SendConsoleCommand(command string) error {
 	cmd := ConsolePayload{Command: command}
-	err := s.client.send("/client/servers/"+s.Attributes.Identifier+"/command", &cmd)
+	err := s.client.send("/client/servers/"+s.Attributes.Identifier+"/command", &cmd, nil)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ type PowerPayload struct {
 // SendPowerAction sends a command to the server
 func (s *Server) SendPowerAction(state PowerAction) error {
 	cmd := PowerPayload{State: fmt.Sprint(state)}
-	err := s.client.send("/client/servers/"+s.Attributes.Identifier+"/power", &cmd)
+	err := s.client.send("/client/servers/"+s.Attributes.Identifier+"/power", &cmd, nil)
 	if err != nil {
 		return err
 	}
